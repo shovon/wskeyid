@@ -8,18 +8,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math/big"
 	mathrand "math/rand"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/shovon/wskeyid/messages/clientmessage"
 	"github.com/shovon/wskeyid/messages/servermessages"
 
 	"github.com/gorilla/websocket"
-	"github.com/rs/zerolog/log"
 	"github.com/shovon/gorillawswrapper"
 )
 
@@ -30,6 +27,8 @@ var (
 	ErrUnsupportedECDSAKeyType   = errors.New("the ECDSA key must be of type 4, as represented by the first byte of the key itself (3rd byte in the buffer)")
 	ErrFailedToReadRandomNumbers = errors.New("in an attempt to generate the challenge, the server failed to read the adequate number bytes needed for our challenge")
 	ErrNotAChallengeResponse     = errors.New("the message received was not a challenge response")
+	ErrConnectionClosed          = errors.New("the connection was closed, in the middle of the handshake")
+	ErrSignatureDoesNotMatch     = errors.New("the signature provided by the client did not match the public key provided")
 )
 
 // We will assume that errors coming from this function will always be errors
@@ -129,7 +128,7 @@ func randInt(max int) int {
 	return int(mathrand.Float32() * float32(max))
 }
 
-func HandleAuthConnection(r *http.Request, c *websocket.Conn) {
+func HandleAuthConnection(r *http.Request, c *websocket.Conn) error {
 	conn := gorillawswrapper.NewWrapper(c)
 	defer conn.Stop()
 
@@ -137,34 +136,38 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) {
 	clientId := strings.TrimSpace(r.URL.Query().Get("client_id"))
 	key, err := getkeyFromClientId(clientId)
 	if err != nil {
-		err := conn.WriteJSON(servermessages.CreateClientError(
-			servermessages.ErrorPayload{
-				Title:  "Bad client ID was supplied",
-				Detail: err.Error(),
-				Meta: map[string]string{
-					"client_id": clientId,
+		{
+			err := conn.WriteJSON(servermessages.CreateClientError(
+				servermessages.ErrorPayload{
+					Title:  "Bad client ID was supplied",
+					Detail: err.Error(),
+					Meta: map[string]string{
+						"client_id": clientId,
+					},
 				},
-			},
-		))
-		if err != nil {
-			log.Error().Msg(err.Error())
+			))
+			if err != nil {
+				return err
+			}
 		}
-		return
+		return err
 	}
 	if key == nil {
-		log.Panic().Msg("the key should not have been null, but alas, it was")
+		panic("the key should not have been null, but alas, it was")
 	}
 
 	payload, err := getChallengePayload()
 	if err != nil {
-		err := conn.WriteJSON(servermessages.CreateServerError(servermessages.ErrorPayload{
-			Title:  "Error generating challenge payload",
-			Detail: err.Error(),
-		}))
-		if err != nil {
-			log.Error().Msg(err.Error())
+		{
+			err := conn.WriteJSON(servermessages.CreateServerError(servermessages.ErrorPayload{
+				Title:  "Error generating challenge payload",
+				Detail: err.Error(),
+			}))
+			if err != nil {
+				return err
+			}
 		}
-		return
+		return err
 	}
 
 	err = conn.WriteJSON(servermessages.Message{
@@ -172,21 +175,17 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) {
 		Data: servermessages.Challenge{Payload: payload},
 	})
 	if err != nil {
-		log.Error().Msg(err.Error())
-		return
+		return err
 	}
-
 	for {
 		m, ok := <-conn.MessagesChannel()
 		if !ok {
-			log.Info().Msg("Attempted to read challenge response, but the connection was closed")
-			return
+			return ErrConnectionClosed
 		}
 
 		pt, sig, err := parseChallengeResponse(m)
 
 		if err != nil {
-			log.Info().Msg("Client provided a bad message. Looping")
 			err := conn.WriteJSON(
 				servermessages.CreateClientError(
 					servermessages.ErrorPayload{
@@ -197,14 +196,12 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) {
 				),
 			)
 			if err != nil {
-				log.Error().Msg(err.Error())
-				return
+				return err
 			}
 			continue
 		}
 
 		if !verifySignature(key, pt, sig) {
-			log.Info().Msg("Client provided a message where the signature does not match. Closing the connection")
 			err := conn.WriteJSON(
 				servermessages.CreateClientError(
 					servermessages.ErrorPayload{
@@ -218,9 +215,9 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) {
 				),
 			)
 			if err != nil {
-				log.Error().Msg(err.Error())
+				return err
 			}
-			return
+			return ErrSignatureDoesNotMatch
 		}
 
 		break
@@ -228,36 +225,36 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) {
 
 	err = conn.WriteJSON(servermessages.MessageNoData{Type: "CONNECTED"})
 	if err != nil {
-		log.Info().Err(err).Msg("An error occurred attempting to tell the client that they connected successfully")
-		return
+		return err
 	}
 
-	go func() {
-		for !conn.HasStopped() {
-			<-time.After(time.Second * time.Duration(randInt(10)))
-			err := conn.WriteJSON(servermessages.Message{Type: "TEXT_MESSAGE", Data: "Cool"})
-			if err != nil {
-				log.Info().Err(err).Msg("An error occurred attempting to tell the client that they connected successfully")
-				return
-			}
-		}
-	}()
+	// go func() {
+	// 	for !conn.HasStopped() {
+	// 		<-time.After(time.Second * time.Duration(randInt(10)))
+	// 		err := conn.WriteJSON(servermessages.Message{Type: "TEXT_MESSAGE", Data: "Cool"})
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }()
 
-	for msg := range conn.MessagesChannel() {
-		var m clientmessage.Message
-		json.Unmarshal(msg.Message, &m)
-		if m.Type != "TEXT_MESSAGE" {
-			fmt.Printf("Got message of %s from %s", m.Type, clientId)
-			continue
-		}
-		var str string
-		err := m.UnmarshalData(&str)
-		if err != nil {
-			fmt.Printf("Failed to get message body")
-		} else {
-			fmt.Printf("Got message from client %s: %s", clientId, str)
-		}
-	}
+	// for msg := range conn.MessagesChannel() {
+	// 	var m clientmessage.Message
+	// 	json.Unmarshal(msg.Message, &m)
+	// 	if m.Type != "TEXT_MESSAGE" {
+	// 		fmt.Printf("Got message of %s from %s", m.Type, clientId)
+	// 		continue
+	// 	}
+	// 	var str string
+	// 	err := m.UnmarshalData(&str)
+	// 	if err != nil {
+	// 		fmt.Printf("Failed to get message body")
+	// 	} else {
+	// 		fmt.Printf("Got message from client %s: %s", clientId, str)
+	// 	}
+	// }
 
-	log.Info().Msg("Client closed the connection. Ending the connection")
+	// log.Info().Msg("Client closed the connection. Ending the connection")
+
+	return nil
 }
