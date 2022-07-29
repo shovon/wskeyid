@@ -1,253 +1,253 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>WebSocket App</title>
-  </head>
-  <body>
-    <script>
-      async function generateKeys() {
-        const keys = await crypto.subtle.generateKey(
-          { name: "ECDSA", namedCurve: "P-256" },
-          false,
-          ["sign", "verify"]
-        );
-        return keys;
-      }
+	<head>
+		<meta charset="utf-8" />
+		<title>WebSocket App</title>
+	</head>
+	<body>
+		<script>
+			async function generateKeys() {
+				const keys = await crypto.subtle.generateKey(
+					{ name: "ECDSA", namedCurve: "P-256" },
+					false,
+					["sign", "verify"]
+				);
+				return keys;
+			}
 
-      function assert(assertion) {
-        if (!assertion) {
-          throw new Error("Assertion failed");
-        }
-      }
+			function assert(assertion) {
+				if (!assertion) {
+					throw new Error("Assertion failed");
+				}
+			}
 
-      // https://github.com/danguer/blog-examples/blob/master/js/base64-binary.js
-      const _keyStr =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+			// Code stolen from here: https://github.com/danguer/blog-examples/blob/master/js/base64-binary.js
+			const _keyStr =
+				"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-      // https://github.com/danguer/blog-examples/blob/master/js/base64-binary.js
-      function removePaddingChars(input) {
-        var lkey = _keyStr.indexOf(input.charAt(input.length - 1));
-        if (lkey == 64) {
-          return input.substring(0, input.length - 1);
-        }
-        return input;
-      }
+			// https://github.com/danguer/blog-examples/blob/master/js/base64-binary.js
+			function removePaddingChars(input) {
+				var lkey = _keyStr.indexOf(input.charAt(input.length - 1));
+				if (lkey == 64) {
+					return input.substring(0, input.length - 1);
+				}
+				return input;
+			}
 
-      // Code stolen from here: https://github.com/danguer/blog-examples/blob/master/js/base64-binary.js
-      function decodeBase64(input, arrayBuffer) {
-        input = removePaddingChars(input);
-        input = removePaddingChars(input);
+			// Code stolen from here: https://github.com/danguer/blog-examples/blob/master/js/base64-binary.js
+			function decodeBase64(input, arrayBuffer) {
+				input = removePaddingChars(input);
+				input = removePaddingChars(input);
 
-        var bytes = parseInt((input.length / 4) * 3, 10);
+				var bytes = parseInt((input.length / 4) * 3, 10);
 
-        var uarray;
-        var chr1, chr2, chr3;
-        var enc1, enc2, enc3, enc4;
-        var i = 0;
-        var j = 0;
+				var uarray;
+				var chr1, chr2, chr3;
+				var enc1, enc2, enc3, enc4;
+				var i = 0;
+				var j = 0;
 
-        if (arrayBuffer) uarray = new Uint8Array(arrayBuffer);
-        else uarray = new Uint8Array(bytes);
+				if (arrayBuffer) uarray = new Uint8Array(arrayBuffer);
+				else uarray = new Uint8Array(bytes);
 
-        input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+				input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
 
-        for (i = 0; i < bytes; i += 3) {
-          //get the 3 octects in 4 ascii chars
-          enc1 = _keyStr.indexOf(input.charAt(j++));
-          enc2 = _keyStr.indexOf(input.charAt(j++));
-          enc3 = _keyStr.indexOf(input.charAt(j++));
-          enc4 = _keyStr.indexOf(input.charAt(j++));
+				for (i = 0; i < bytes; i += 3) {
+					//get the 3 octects in 4 ascii chars
+					enc1 = _keyStr.indexOf(input.charAt(j++));
+					enc2 = _keyStr.indexOf(input.charAt(j++));
+					enc3 = _keyStr.indexOf(input.charAt(j++));
+					enc4 = _keyStr.indexOf(input.charAt(j++));
 
-          chr1 = (enc1 << 2) | (enc2 >> 4);
-          chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-          chr3 = ((enc3 & 3) << 6) | enc4;
+					chr1 = (enc1 << 2) | (enc2 >> 4);
+					chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+					chr3 = ((enc3 & 3) << 6) | enc4;
 
-          uarray[i] = chr1;
-          if (enc3 != 64) uarray[i + 1] = chr2;
-          if (enc4 != 64) uarray[i + 2] = chr3;
-        }
+					uarray[i] = chr1;
+					if (enc3 != 64) uarray[i + 1] = chr2;
+					if (enc4 != 64) uarray[i + 2] = chr3;
+				}
 
-        return uarray;
-      }
+				return uarray;
+			}
 
-      // Code stolen from https://gist.github.com/jonleighton/958841
-      function encodeBase64(arrayBuffer) {
-        var base64 = "";
-        var encodings =
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+			// Code stolen from https://gist.github.com/jonleighton/958841
+			function encodeBase64(arrayBuffer) {
+				var base64 = "";
+				var encodings =
+					"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-        var bytes = new Uint8Array(arrayBuffer);
-        var byteLength = bytes.byteLength;
-        var byteRemainder = byteLength % 3;
-        var mainLength = byteLength - byteRemainder;
+				var bytes = new Uint8Array(arrayBuffer);
+				var byteLength = bytes.byteLength;
+				var byteRemainder = byteLength % 3;
+				var mainLength = byteLength - byteRemainder;
 
-        var a, b, c, d;
-        var chunk;
+				var a, b, c, d;
+				var chunk;
 
-        // Main loop deals with bytes in chunks of 3
-        for (var i = 0; i < mainLength; i = i + 3) {
-          // Combine the three bytes into a single integer
-          chunk = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
+				// Main loop deals with bytes in chunks of 3
+				for (var i = 0; i < mainLength; i = i + 3) {
+					// Combine the three bytes into a single integer
+					chunk = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
 
-          // Use bitmasks to extract 6-bit segments from the triplet
-          a = (chunk & 16515072) >> 18; // 16515072 = (2^6 - 1) << 18
-          b = (chunk & 258048) >> 12; // 258048   = (2^6 - 1) << 12
-          c = (chunk & 4032) >> 6; // 4032     = (2^6 - 1) << 6
-          d = chunk & 63; // 63       = 2^6 - 1
+					// Use bitmasks to extract 6-bit segments from the triplet
+					a = (chunk & 16515072) >> 18; // 16515072 = (2^6 - 1) << 18
+					b = (chunk & 258048) >> 12; // 258048   = (2^6 - 1) << 12
+					c = (chunk & 4032) >> 6; // 4032     = (2^6 - 1) << 6
+					d = chunk & 63; // 63       = 2^6 - 1
 
-          // Convert the raw binary segments to the appropriate ASCII encoding
-          base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d];
-        }
+					// Convert the raw binary segments to the appropriate ASCII encoding
+					base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d];
+				}
 
-        // Deal with the remaining bytes and padding
-        if (byteRemainder == 1) {
-          chunk = bytes[mainLength];
+				// Deal with the remaining bytes and padding
+				if (byteRemainder == 1) {
+					chunk = bytes[mainLength];
 
-          a = (chunk & 252) >> 2; // 252 = (2^6 - 1) << 2
+					a = (chunk & 252) >> 2; // 252 = (2^6 - 1) << 2
 
-          // Set the 4 least significant bits to zero
-          b = (chunk & 3) << 4; // 3   = 2^2 - 1
+					// Set the 4 least significant bits to zero
+					b = (chunk & 3) << 4; // 3   = 2^2 - 1
 
-          base64 += encodings[a] + encodings[b] + "==";
-        } else if (byteRemainder == 2) {
-          chunk = (bytes[mainLength] << 8) | bytes[mainLength + 1];
+					base64 += encodings[a] + encodings[b] + "==";
+				} else if (byteRemainder == 2) {
+					chunk = (bytes[mainLength] << 8) | bytes[mainLength + 1];
 
-          a = (chunk & 64512) >> 10; // 64512 = (2^6 - 1) << 10
-          b = (chunk & 1008) >> 4; // 1008  = (2^6 - 1) << 4
+					a = (chunk & 64512) >> 10; // 64512 = (2^6 - 1) << 10
+					b = (chunk & 1008) >> 4; // 1008  = (2^6 - 1) << 4
 
-          // Set the 2 least significant bits to zero
-          c = (chunk & 15) << 2; // 15    = 2^4 - 1
+					// Set the 2 least significant bits to zero
+					c = (chunk & 15) << 2; // 15    = 2^4 - 1
 
-          base64 += encodings[a] + encodings[b] + encodings[c] + "=";
-        }
+					base64 += encodings[a] + encodings[b] + encodings[c] + "=";
+				}
 
-        return base64;
-      }
+				return base64;
+			}
 
-      function concatBuffers(a, b) {
-        const tmp = new Uint8Array(a.byteLength + b.byteLength);
-        tmp.set(new Uint8Array(a), 0);
-        tmp.set(new Uint8Array(b), a.byteLength);
-        return tmp;
-      }
+			function concatBuffers(a, b) {
+				const tmp = new Uint8Array(a.byteLength + b.byteLength);
+				tmp.set(new Uint8Array(a), 0);
+				tmp.set(new Uint8Array(b), a.byteLength);
+				return tmp;
+			}
 
-      async function getClientId(publicKey) {
-        const raw = await crypto.subtle.exportKey("raw", publicKey);
-        const prefix = new Uint8Array([0x0, 0x1]);
-        const clientIdBuf = concatBuffers(prefix, raw);
-        return encodeBase64(clientIdBuf);
-      }
+			async function getClientId(publicKey) {
+				const raw = await crypto.subtle.exportKey("raw", publicKey);
+				const prefix = new Uint8Array([0x0, 0x1]);
+				const clientIdBuf = concatBuffers(prefix, raw);
+				return encodeBase64(clientIdBuf);
+			}
 
-      class EventEmitter {
-        listeners = [];
+			class EventEmitter {
+				listeners = [];
 
-        addEventListener(listener) {
-          this.listeners.push(listener);
-        }
+				addEventListener(listener) {
+					this.listeners.push(listener);
+				}
 
-        removeEventListener(listener) {
-          this.listeners = this.listeners.filter((l) => l !== listener);
-        }
+				removeEventListener(listener) {
+					this.listeners = this.listeners.filter((l) => l !== listener);
+				}
 
-        emit(data) {
-          for (const listener of this.listeners) {
-            listener(data);
-          }
-        }
-      }
+				emit(data) {
+					for (const listener of this.listeners) {
+						listener(data);
+					}
+				}
+			}
 
-      /**
-       * A wrapper for WebSocket that also performs a pre-connection
-       * authentication.
-       */
-      class AuthenticatedConnection {
-        _messages = [];
-        _onMessage = new EventEmitter();
-        _connectionState = "authenticating";
+			/**
+			 * A wrapper for WebSocket that also performs a pre-connection
+			 * authentication.
+			 */
+			class AuthenticatedConnection {
+				_messages = [];
+				_onMessage = new EventEmitter();
+				_connectionState = "authenticating";
 
-        constructor(url, keys, clientIdParam = "client_id") {
-          const u = new URL(url);
-          u.searchParams.set(clientIdParam, clientId);
-          this.url = u.toString();
-          this._connect();
-        }
+				constructor(url, keys, clientIdParam = "client_id") {
+					const u = new URL(url);
+					u.searchParams.set(clientIdParam, clientId);
+					this.url = u.toString();
+					this._connect();
+				}
 
-        _connect() {
-          this._ws = null;
-          this._ws = new WebSocket(this.url);
-          this._ws.addEventListener("open", () => {});
-          this._ws.addEventListener("close", () => {
-            this._connect();
-          });
-          this._ws.addEventListener("error", () => {
-            this._connect();
-          });
-          this._ws.addEventListener("message", (event) => {
-            this._onMessage.emit(event.data);
-          });
-        }
+				_connect() {
+					this._ws = null;
+					this._ws = new WebSocket(this.url);
+					this._ws.addEventListener("open", () => {});
+					this._ws.addEventListener("close", () => {
+						this._connect();
+					});
+					this._ws.addEventListener("error", () => {
+						this._connect();
+					});
+					this._ws.addEventListener("message", (event) => {
+						this._onMessage.emit(event.data);
+					});
+				}
 
-        send(data) {
-          if (!this._ws || this._ws.readyState !== this._ws.OPEN) {
-            this._messages.push(data);
-          } else {
-            this._ws.send(data);
-          }
-        }
-      }
+				send(data) {
+					if (!this._ws || this._ws.readyState !== this._ws.OPEN) {
+						this._messages.push(data);
+					} else {
+						this._ws.send(data);
+					}
+				}
+			}
 
-      (async function () {
-        const keys = await generateKeys();
-        const clientId = await getClientId(keys.publicKey);
+			(async function () {
+				const keys = await generateKeys();
+				const clientId = await getClientId(keys.publicKey);
 
-        const ws = new WebSocket(
-          `ws://${location.host}/path?client_id=${encodeURIComponent(clientId)}`
-        );
-        ws.addEventListener("message", (message) => {
-          const { type, data } = JSON.parse(message.data);
-          console.log(type, data);
-          if (type === "CHALLENGE") {
-            const payload = decodeBase64(data.payload);
-            crypto.subtle
-              .sign(
-                {
-                  name: "ECDSA",
-                  hash: { name: "SHA-256" },
-                },
-                keys.privateKey,
-                payload
-              )
-              .then(async (signature) => {
-                console.log(payload, signature);
-                const verification = await crypto.subtle.verify(
-                  { name: "ECDSA", hash: { name: "SHA-256" } },
-                  keys.publicKey,
-                  signature,
-                  payload
-                );
-                console.log(verification);
-                ws.send(
-                  JSON.stringify({
-                    type: "CHALLENGE_RESPONSE",
-                    data: {
-                      payload: data.payload,
-                      signature: encodeBase64(signature),
-                    },
-                  })
-                );
-              });
-          } else {
-            ws.send(JSON.stringify({ type: "RESPONSE", data: "Haha" }));
-          }
-        });
-        ws.addEventListener("open", () => {
-          console.log("Opened");
-        });
-        ws.addEventListener("close", () => {
-          console.log("WebSocket connection closed");
-        });
-      })().catch(console.error);
-    </script>
-  </body>
+				const ws = new WebSocket(
+					`ws://${location.host}/path?client_id=${encodeURIComponent(clientId)}`
+				);
+				ws.addEventListener("message", (message) => {
+					const { type, data } = JSON.parse(message.data);
+					console.log(type, data);
+					if (type === "CHALLENGE") {
+						const payload = decodeBase64(data.payload);
+						crypto.subtle
+							.sign(
+								{
+									name: "ECDSA",
+									hash: { name: "SHA-256" },
+								},
+								keys.privateKey,
+								payload
+							)
+							.then(async (signature) => {
+								console.log(payload, signature);
+								const verification = await crypto.subtle.verify(
+									{ name: "ECDSA", hash: { name: "SHA-256" } },
+									keys.publicKey,
+									signature,
+									payload
+								);
+								console.log(verification);
+								ws.send(
+									JSON.stringify({
+										type: "CHALLENGE_RESPONSE",
+										data: {
+											payload: data.payload,
+											signature: encodeBase64(signature),
+										},
+									})
+								);
+							});
+					} else {
+						ws.send(JSON.stringify({ type: "RESPONSE", data: "Haha" }));
+					}
+				});
+				ws.addEventListener("open", () => {
+					console.log("Opened");
+				});
+				ws.addEventListener("close", () => {
+					console.log("WebSocket connection closed");
+				});
+			})().catch(console.error);
+		</script>
+	</body>
 </html>

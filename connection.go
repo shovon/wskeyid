@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"math/big"
 	"net/http"
 	"strings"
@@ -17,17 +16,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/shovon/gorillawswrapper"
-)
-
-var (
-	ErrClientIdWasNotSupplied    = errors.New("the client ID was not supplied by the client")
-	ErrBadClientIdFormat         = errors.New("the client ID is of a bad format. Expected a base64 string, that encodes a buffer of 67 bytes but got something else")
-	ErrUnsuportedClientIdVersion = errors.New("the client ID version is unsupported. The first two bytes of the base64-encoded value of the client ID must be an int16 value equal exactly to 0x01")
-	ErrUnsupportedECDSAKeyType   = errors.New("the ECDSA key must be of type 4, as represented by the first byte of the key itself (3rd byte in the buffer)")
-	ErrFailedToReadRandomNumbers = errors.New("in an attempt to generate the challenge, the server failed to read the adequate number bytes needed for our challenge")
-	ErrNotAChallengeResponse     = errors.New("the message received was not a challenge response")
-	ErrConnectionClosed          = errors.New("the connection was closed, in the middle of the handshake")
-	ErrSignatureDoesNotMatch     = errors.New("the signature provided by the client did not match the public key provided")
 )
 
 // We will assume that errors coming from this function will always be errors
@@ -44,7 +32,7 @@ func getkeyFromClientId(clientId string) (*ecdsa.PublicKey, error) {
 		return nil, err
 	}
 	if len(buf) != (2 + 1 + 32 + 32) {
-		return nil, ErrBadClientIdFormat
+		return nil, ErrBadClientIDFormat
 	}
 	versionBuf, kind, xBuf, yBuf := buf[0:2], buf[2], buf[3:35], buf[35:]
 	version := uint16(versionBuf[0])<<8 | uint16(versionBuf[1])
