@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"math/big"
-	mathrand "math/rand"
 	"net/http"
 	"strings"
 
@@ -124,10 +123,6 @@ func verifySignature(key *ecdsa.PublicKey, pt, sig []byte) bool {
 	return ecdsa.Verify(key, hash[:], r, s)
 }
 
-func randInt(max int) int {
-	return int(mathrand.Float32() * float32(max))
-}
-
 func HandleAuthConnection(r *http.Request, c *websocket.Conn) error {
 	conn := gorillawswrapper.NewWrapper(c)
 	defer conn.Stop()
@@ -227,34 +222,6 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) error {
 	if err != nil {
 		return err
 	}
-
-	// go func() {
-	// 	for !conn.HasStopped() {
-	// 		<-time.After(time.Second * time.Duration(randInt(10)))
-	// 		err := conn.WriteJSON(servermessages.Message{Type: "TEXT_MESSAGE", Data: "Cool"})
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }()
-
-	// for msg := range conn.MessagesChannel() {
-	// 	var m clientmessage.Message
-	// 	json.Unmarshal(msg.Message, &m)
-	// 	if m.Type != "TEXT_MESSAGE" {
-	// 		fmt.Printf("Got message of %s from %s", m.Type, clientId)
-	// 		continue
-	// 	}
-	// 	var str string
-	// 	err := m.UnmarshalData(&str)
-	// 	if err != nil {
-	// 		fmt.Printf("Failed to get message body")
-	// 	} else {
-	// 		fmt.Printf("Got message from client %s: %s", clientId, str)
-	// 	}
-	// }
-
-	// log.Info().Msg("Client closed the connection. Ending the connection")
 
 	return nil
 }
