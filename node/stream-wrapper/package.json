@@ -1,0 +1,19 @@
+{
+  "name": "stream-wrapper",
+  "version": "1.0.0",
+  "description": "A wrapper for",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "events",
+    "async-iterator",
+    "async-iterable"
+  ],
+  "author": "Sal Rahman <hey.to.sal@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^17.0.42"
+  }
+}
