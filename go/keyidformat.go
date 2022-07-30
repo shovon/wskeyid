@@ -17,7 +17,10 @@ import (
 // WebCrypto-raw.EC.P-256$BJsxA+HaVosJsyVC/Sm7BkeOwCavi1hlG/2FhJl+k4YQsCqMPbETZl0CM8/JHJ3BlUywxRMYTKocQA+deDIsAOQ=
 
 // ParseKeyFromClientID parses the client ID string, and returns an elliptic
-// elliptic curve public key.
+// curve public key.
+//
+// If parsing failed, then an the public key will be set to null, and instead an
+// error will be returned.
 func ParseKeyFromClientID(clientId string) (*ecdsa.PublicKey, error) {
 	if !strings.Contains(clientId, "$") {
 		return nil, ErrBadClientIDFormat
