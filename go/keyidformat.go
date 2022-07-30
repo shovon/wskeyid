@@ -22,10 +22,6 @@ import (
 // If parsing failed, then an the public key will be set to null, and instead an
 // error will be returned.
 func ParseKeyFromClientID(clientId string) (*ecdsa.PublicKey, error) {
-	if !strings.Contains(clientId, "$") {
-		return nil, ErrBadClientIDFormat
-	}
-
 	parts := strings.Split(clientId, "$")
 	if len(parts) != 2 {
 		// TODO: this is where we may want to be detailed as to why is the client ID
