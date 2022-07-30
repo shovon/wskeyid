@@ -1,4 +1,4 @@
-module github.com/shovon/wskeyid
+module github.com/shovon/go/wskeyid
 
 go 1.18
 
