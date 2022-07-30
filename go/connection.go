@@ -83,6 +83,7 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) error {
 	defer conn.Stop()
 
 	// Grab the client ID
+	// TODO: perhaps soft-code the query parameter name for grabbing the client_id
 	clientId := strings.TrimSpace(r.URL.Query().Get("client_id"))
 	key, err := ParseKeyFromClientID(clientId)
 	if err != nil {
