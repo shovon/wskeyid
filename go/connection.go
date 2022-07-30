@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/shovon/wskeyid/messages/clientmessage"
-	"github.com/shovon/wskeyid/messages/servermessages"
+	"github.com/shovon/go/wskeyid/messages/clientmessage"
+	"github.com/shovon/go/wskeyid/messages/servermessages"
 
 	"github.com/gorilla/websocket"
 	"github.com/shovon/gorillawswrapper"

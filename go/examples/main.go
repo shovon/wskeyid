@@ -12,10 +12,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/shovon/go/wskeyid"
+	"github.com/shovon/go/wskeyid/messages/clientmessage"
+	"github.com/shovon/go/wskeyid/messages/servermessages"
 	"github.com/shovon/gorillawswrapper"
-	"github.com/shovon/wskeyid"
-	"github.com/shovon/wskeyid/messages/clientmessage"
-	"github.com/shovon/wskeyid/messages/servermessages"
 )
 
 var upgrader = websocket.Upgrader{
