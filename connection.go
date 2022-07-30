@@ -2,7 +2,6 @@ package wskeyid
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -17,38 +16,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/shovon/gorillawswrapper"
 )
-
-// We will assume that errors coming from this function will always be errors
-// that were caused by the client.
-func getkeyFromClientId(clientId string) (*ecdsa.PublicKey, error) {
-	// TODO: move all of this to a separate file, and write some rudimentary Go
-	//   tests
-
-	if len(clientId) <= 0 {
-		return nil, ErrClientIdWasNotSupplied
-	}
-	buf, err := base64.StdEncoding.DecodeString(clientId)
-	if err != nil {
-		return nil, err
-	}
-	if len(buf) != (2 + 1 + 32 + 32) {
-		return nil, ErrBadClientIDFormat
-	}
-	versionBuf, kind, xBuf, yBuf := buf[0:2], buf[2], buf[3:35], buf[35:]
-	version := uint16(versionBuf[0])<<8 | uint16(versionBuf[1])
-	if version != 1 {
-		return nil, ErrUnsuportedClientIdVersion
-	}
-	if kind != 0x4 {
-		return nil, ErrUnsupportedECDSAKeyType
-	}
-	x := &big.Int{}
-	y := &big.Int{}
-	x.SetBytes(xBuf)
-	y.SetBytes(yBuf)
-	key := &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}
-	return key, nil
-}
 
 const challengeByteLength = 128
 
@@ -117,7 +84,7 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) error {
 
 	// Grab the client ID
 	clientId := strings.TrimSpace(r.URL.Query().Get("client_id"))
-	key, err := getkeyFromClientId(clientId)
+	key, err := ParseKeyFromClientID(clientId)
 	if err != nil {
 		{
 			err := conn.WriteJSON(servermessages.CreateClientError(
