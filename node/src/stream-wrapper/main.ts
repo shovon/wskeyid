@@ -1,5 +1,11 @@
 type Listener<T> = (event: T) => void;
 
+export class ReadingFromClosedStreamError extends Error {
+	constructor() {
+		super("An attempt was made to read from a closed port");
+	}
+}
+
 /**
  * An async iterable class that allows you to stream events in, and convert
  * those events into an async iterable, with an optional event handler for
@@ -56,23 +62,40 @@ export default class StreamAsyncIterable<T> {
 		this.onExcessListeners.push(listener);
 	}
 
+	read(): Promise<T> {
+		const self = this;
+
+		if (self.buffer.length <= 0 && self._done) {
+			throw new ReadingFromClosedStreamError();
+		}
+		if (self.buffer.length) {
+			const result = self.buffer.pop();
+			if (!result) {
+				throw new Error("An unknown error occurred");
+			}
+			return Promise.resolve(result);
+		}
+
+		return new Promise<T>((resolve) => {
+			self.shortTermListener = (value) => {
+				self.shortTermListener = null;
+				resolve(value);
+			};
+		});
+	}
+
 	[Symbol.asyncIterator]() {
 		const self = this;
 		return {
-			next(): Promise<{ done: boolean; value?: T }> {
-				if (self.buffer.length <= 0 && self._done) {
-					return Promise.resolve({ done: true });
+			async next(): Promise<{ done: boolean; value?: T }> {
+				try {
+				} catch (e) {
+					if (e instanceof ReadingFromClosedStreamError) {
+						return { done: true };
+					}
+					throw e;
 				}
-				if (self.buffer.length) {
-					return Promise.resolve({ value: self.buffer.pop(), done: false });
-				}
-				const p = new Promise<{ done: boolean; value: T }>((resolve) => {
-					self.shortTermListener = (value) => {
-						self.shortTermListener = null;
-						resolve({ value, done: false });
-					};
-				});
-				return p;
+				return { value: await self.read(), done: false };
 			},
 			return(): Promise<{ done: boolean; value?: T }> {
 				return Promise.resolve({ done: true });
