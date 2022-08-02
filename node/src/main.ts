@@ -7,7 +7,6 @@ import {
 } from "./server-messages";
 import StreamAsyncIterable from "./stream-wrapper/main";
 import { challengeResponseSchema } from "./client-messages";
-import { validate } from "./validator";
 
 export class BadClientIDFormatError extends Error {
 	constructor() {
