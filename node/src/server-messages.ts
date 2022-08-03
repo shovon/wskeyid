@@ -21,6 +21,10 @@ type ChallengeRequest = {
 	};
 };
 
+type ConnectedResponse = {
+	type: "CONNECTED";
+};
+
 export type ClientMessage = ClientError | ServerError | ChallengeRequest;
 
 export function createClientError(payload: ErrorPayload): ClientError {
@@ -35,5 +39,11 @@ export function createChallengeRequest(payload: string): ChallengeRequest {
 	return {
 		type: "CHALLENGE",
 		data: { payload },
+	};
+}
+
+export function createConnectedResponse(): ConnectedResponse {
+	return {
+		type: "CONNECTED",
 	};
 }

@@ -8,17 +8,24 @@ import {
 import StreamAsyncIterable from "./stream-wrapper/main";
 import { challengeResponseSchema } from "./client-messages";
 
+/**
+ * An error representing that the client ID is of a bad format
+ */
 export class BadClientIDFormatError extends Error {
 	constructor() {
 		super(
-			"the client ID is of a bad format. Expected a string of format <format>$<base64-encoded buffer>, e.g. WebCrypto-raw.EC.P-256$JsxA+HaVosJsyVC/S"
+			"The client ID is of a bad format. Expected a string of format <format>$<base64-encoded buffer>, e.g. WebCrypto-raw.EC.P-256$JsxA+HaVosJsyVC/S"
 		);
 	}
 }
 
+/**
+ * An error representing that the key is not a recognizable format, according to
+ * the NIST elliptic curve key format specification
+ */
 export class UnknownNISTKeyFormatError extends Error {
 	constructor() {
-		super();
+		super("The supplied key is not of a recognizable NIST format.");
 	}
 }
 
@@ -136,6 +143,13 @@ async function handleConnection(socket: Socket, path: string) {
 		} catch {}
 
 		if (!verified) {
+			JSON.stringify(
+				createClientError({
+					title: "Signature did not match the challenge response",
+				})
+			);
+			socket.close();
+			return;
 		}
 	}
 }
