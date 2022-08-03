@@ -60,7 +60,7 @@ type Socket = {
 	sendMessage(value: string): void;
 };
 
-async function handleConnection(socket: Socket, path: string) {
+export async function handleConnection(socket: Socket, path: string): boolean {
 	const sendMessage = (message: ClientMessage) => {
 		socket.sendMessage(JSON.stringify(message));
 	};
@@ -76,7 +76,7 @@ async function handleConnection(socket: Socket, path: string) {
 			})
 		);
 		socket.close();
-		return;
+		return false;
 	}
 
 	let key: CryptoKey;
@@ -100,7 +100,7 @@ async function handleConnection(socket: Socket, path: string) {
 				);
 			}
 			socket.close();
-			return;
+			return false;
 		}
 	}
 
@@ -149,7 +149,11 @@ async function handleConnection(socket: Socket, path: string) {
 				})
 			);
 			socket.close();
-			return;
+			return false;
 		}
+
+		break;
 	}
+
+	return true;
 }
