@@ -15,4 +15,19 @@ export class PubSub<T> {
 			this.listeners.delete(listener);
 		};
 	}
+
+	getNext(): Promise<T> {
+		return new Promise((resolve) => {
+			const unsubscribe = this.addEventListener((event) => {
+				unsubscribe();
+				resolve(event);
+			});
+		});
+	}
+
+	async *toAsyncIterable(): AsyncIterable<T> {
+		while (true) {
+			yield this.getNext();
+		}
+	}
 }

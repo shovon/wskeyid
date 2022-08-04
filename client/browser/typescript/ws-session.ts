@@ -3,7 +3,7 @@ import { PubSub } from "./pub-sub";
 export default class WsSession {
 	private ws: WebSocket | null = null;
 	private _url: string;
-	private closed: boolean = false;
+	private _isClosed: boolean = false;
 	private messages: string[] = [];
 	private _messageEvents: PubSub<MessageEvent> = new PubSub();
 	private _connectedEvents: PubSub<void> = new PubSub();
@@ -19,7 +19,7 @@ export default class WsSession {
 	}
 
 	private connect() {
-		if (this.closed) {
+		if (this._isClosed) {
 			return;
 		}
 
@@ -49,7 +49,7 @@ export default class WsSession {
 	}
 
 	close() {
-		this.closed = true;
+		this._isClosed = true;
 		this.ws?.close();
 	}
 
@@ -78,5 +78,9 @@ export default class WsSession {
 
 	get disconnectionEvents(): PubSub<void> {
 		return this._disconnectionEvents;
+	}
+
+	get isClosed(): boolean {
+		return this._isClosed;
 	}
 }
