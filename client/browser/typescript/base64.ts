@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 const _keyStr =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-function removePaddingChars(input) {
+function removePaddingChars(input: string) {
 	const lkey = _keyStr.indexOf(input.charAt(input.length - 1));
 	if (lkey == 64) {
 		return input.substring(0, input.length - 1);
@@ -74,7 +74,7 @@ export function decodeBase64(
 	return uarray;
 }
 
-export function encodeBase64(arrayBuffer) {
+export function encodeBase64(arrayBuffer: ArrayBuffer) {
 	let base64 = "";
 	const encodings =
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
