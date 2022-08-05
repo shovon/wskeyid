@@ -21,6 +21,13 @@ type Challenge struct {
 	Payload string `json:"payload"`
 }
 
+func CreateServerChallenge(payload string) Message {
+	return Message{
+		Type: "CHALLENGE",
+		Data: Challenge{Payload: payload},
+	}
+}
+
 func CreateClientError(payload ErrorPayload) Message {
 	return Message{
 		Type: "CLIENT_ERROR",
@@ -32,5 +39,11 @@ func CreateServerError(payload ErrorPayload) Message {
 	return Message{
 		Type: "SERVER_ERROR",
 		Data: payload,
+	}
+}
+
+func CreateConnectedMessage() MessageNoData {
+	return MessageNoData{
+		Type: "CONNECTED",
 	}
 }

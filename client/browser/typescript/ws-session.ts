@@ -1,4 +1,4 @@
-import { PubSub } from "./pub-sub";
+import { PubSub, Sub } from "./pub-sub";
 
 export default class WsSession {
 	private ws: WebSocket | null = null;
@@ -68,15 +68,15 @@ export default class WsSession {
 		}
 	}
 
-	get messageEvents(): PubSub<MessageEvent> {
+	get messageEvents(): Sub<MessageEvent> {
 		return this._messageEvents;
 	}
 
-	get connectionEvents(): PubSub<void> {
+	get connectionEvents(): Sub<void> {
 		return this._connectedEvents;
 	}
 
-	get disconnectionEvents(): PubSub<void> {
+	get disconnectionEvents(): Sub<void> {
 		return this._disconnectionEvents;
 	}
 

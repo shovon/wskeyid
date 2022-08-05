@@ -121,10 +121,7 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) error {
 		return err
 	}
 
-	err = conn.WriteJSON(servermessages.Message{
-		Type: "CHALLENGE",
-		Data: servermessages.Challenge{Payload: payload},
-	})
+	err = conn.WriteJSON(servermessages.CreateServerChallenge(payload))
 	if err != nil {
 		return err
 	}
@@ -174,7 +171,7 @@ func HandleAuthConnection(r *http.Request, c *websocket.Conn) error {
 		break
 	}
 
-	err = conn.WriteJSON(servermessages.MessageNoData{Type: "CONNECTED"})
+	err = conn.WriteJSON(servermessages.CreateConnectedMessage())
 	if err != nil {
 		return err
 	}

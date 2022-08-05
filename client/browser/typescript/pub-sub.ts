@@ -1,5 +1,9 @@
 type Listener<T> = (event: T) => void;
 
+export interface Sub<T> {
+	addEventListener(listener: Listener<T>): () => void;
+}
+
 export class PubSub<T> {
 	private listeners: Set<Listener<T>> = new Set();
 
@@ -15,19 +19,19 @@ export class PubSub<T> {
 			this.listeners.delete(listener);
 		};
 	}
+}
 
-	getNext(): Promise<T> {
-		return new Promise((resolve) => {
-			const unsubscribe = this.addEventListener((event) => {
-				unsubscribe();
-				resolve(event);
-			});
+export function getNext<T>(stream: Sub<T>): Promise<T> {
+	return new Promise((resolve) => {
+		const unsubscribe = stream.addEventListener((event) => {
+			unsubscribe();
+			resolve(event);
 		});
-	}
+	});
+}
 
-	async *toAsyncIterable(): AsyncIterable<T> {
-		while (true) {
-			yield this.getNext();
-		}
+export async function* toAsyncIterable<T>(stream: Sub<T>): AsyncIterable<T> {
+	while (true) {
+		yield getNext(stream);
 	}
 }
