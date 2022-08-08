@@ -1,6 +1,7 @@
+import { decodeBase64, encodeBase64 } from "./base64";
 import Once from "./once";
 import { getNext, PubSub } from "./pub-sub";
-import { getClientId } from "./utils";
+import { getClientId, signMessage } from "./utils";
 import WsSession from "./ws-session";
 
 /**
@@ -34,17 +35,52 @@ export default class AuthenticatedConnection {
 			return;
 		}
 
-		const { data: payload } = await getNext(this.session.messageEvents);
-
 		try {
-			const { type, data } = JSON.parse(payload);
+			{
+				const { data: payload } = await getNext(this.session.messageEvents);
+
+				const { type, data } = JSON.parse(payload);
+
+				if (type === "CHALLENGE" && data && typeof data.payload === "string") {
+					const messageToSign = decodeBase64(data.payload);
+					const signature = await signMessage(
+						this.key.privateKey,
+						messageToSign
+					);
+
+					this.session.send(
+						JSON.stringify({
+							type: "CHALLENGE_RESPONSE",
+							data: {
+								payload: data.payload,
+								signature: encodeBase64(signature),
+							},
+						})
+					);
+				} else {
+					throw new Error("Got a bad challenge request from the server");
+				}
+			}
+
+			{
+				const { data: response } = await getNext(this.session.messageEvents);
+
+				const { type } = JSON.parse(response);
+
+				if (type !== "CONNECTED") {
+					throw new Error("Failed to connect");
+				}
+			}
 		} catch (e) {
 			console.error(e);
 			this.fail();
+			return;
 		}
 	}
 
 	private fail() {
+		// TODO: the cause of the failure needs to be specified
+
 		this._hasFailed = true;
 		this._onFail.emit();
 		this.close();
@@ -52,6 +88,10 @@ export default class AuthenticatedConnection {
 
 	close() {
 		this.session?.close();
+	}
+
+	get hasFailed(): boolean {
+		return this._hasFailed;
 	}
 
 	static async connect(

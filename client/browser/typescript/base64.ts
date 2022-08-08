@@ -37,7 +37,7 @@ function removePaddingChars(input: string) {
 
 export function decodeBase64(
 	input: string,
-	arrayBuffer: Uint8Array
+	arrayBuffer?: Uint8Array
 ): Uint8Array {
 	input = removePaddingChars(input);
 	input = removePaddingChars(input);
