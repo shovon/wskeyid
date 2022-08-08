@@ -1,8 +1,30 @@
 import { decodeBase64, encodeBase64 } from "./base64";
-import Once from "./once";
-import { getNext, PubSub } from "./pub-sub";
+import Once, { SubOnce } from "./once";
+import { getNext } from "./pub-sub";
 import { getClientId, signMessage } from "./utils";
 import WsSession from "./ws-session";
+
+class Failed implements SubOnce<void> {
+	private _hasFailed: boolean = false;
+	private once: Once<void> = new Once<void>();
+
+	fail() {
+		this._hasFailed = true;
+		this.once.emit();
+	}
+
+	addEventListener(listener: (value: void) => void): () => void {
+		return this.once.addEventListener(listener);
+	}
+
+	toPromise(): Promise<void> {
+		return this.once.toPromise();
+	}
+
+	get hasFailed() {
+		return this._hasFailed;
+	}
+}
 
 /**
  * This is a class that maintains an authenticated connection.
@@ -11,8 +33,7 @@ import WsSession from "./ws-session";
  * established.
  */
 export default class AuthenticatedConnection {
-	private _hasFailed: boolean = false;
-	private _onFail: Once<void> = new Once();
+	private failed: Failed = new Failed();
 	private session: WsSession | null = null;
 	private _url: URL;
 
@@ -73,17 +94,9 @@ export default class AuthenticatedConnection {
 			}
 		} catch (e) {
 			console.error(e);
-			this.fail();
+			this.failed.fail();
 			return;
 		}
-	}
-
-	private fail() {
-		// TODO: the cause of the failure needs to be specified
-
-		this._hasFailed = true;
-		this._onFail.emit();
-		this.close();
 	}
 
 	close() {
@@ -91,7 +104,11 @@ export default class AuthenticatedConnection {
 	}
 
 	get hasFailed(): boolean {
-		return this._hasFailed;
+		return this.failed.hasFailed;
+	}
+
+	get onFail(): SubOnce<void> {
+		return this.failed;
 	}
 
 	static async connect(

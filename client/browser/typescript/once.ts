@@ -1,5 +1,10 @@
 type Listener<T> = (value: T) => void;
 
+export interface SubOnce<T> {
+	addEventListener(listener: Listener<T>): () => void;
+	toPromise(): Promise<T>;
+}
+
 export default class Once<T> {
 	private value:
 		| {
@@ -25,15 +30,29 @@ export default class Once<T> {
 		}
 	}
 
-	addEventListener(listener: Listener<T>) {
+	addEventListener(listener: Listener<T>): () => void {
+		let cancelled = false;
+
+		let timeout: number | undefined;
+
 		if (!this.value.resolved) {
 			this.listeners.push(listener);
 		} else {
 			const value = this.value.value;
-			setTimeout(() => {
-				listener(value);
+			timeout = setTimeout(() => {
+				if (!cancelled) {
+					listener(value);
+				}
 			});
 		}
+
+		return () => {
+			cancelled = true;
+			this.listeners = this.listeners.filter((l) => l !== listener);
+			if (timeout) {
+				clearTimeout(timeout);
+			}
+		};
 	}
 
 	toPromise(): Promise<T> {
