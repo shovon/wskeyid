@@ -1,4 +1,4 @@
-import { PubSub, Sub } from "./pub-sub";
+import PubSub, { Sub } from "./pub-sub";
 
 export default class WsSession {
 	private ws: WebSocket | null = null;

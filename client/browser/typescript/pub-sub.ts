@@ -4,7 +4,7 @@ export interface Sub<T> {
 	addEventListener(listener: Listener<T>): () => void;
 }
 
-export class PubSub<T> implements Sub<T> {
+export default class PubSub<T> implements Sub<T> {
 	private listeners: Set<Listener<T>> = new Set();
 
 	emit(event: T) {
