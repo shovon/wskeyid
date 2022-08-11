@@ -1,26 +1,5 @@
 import PubSub from "./pub-sub";
-
-function assert(assertion: boolean, message: string = "Failed") {
-	if (!assertion) {
-		throw new Error(message);
-	}
-}
-
-function assertEquals(a: any, b: any, message?: string) {
-	assert(a === b, message ?? `${a} !== ${b}`);
-}
-
-function assertArrayEquals(a: any[], b: any[]) {
-	assertEquals(
-		a.length,
-		b.length,
-		`Expected ${JSON.stringify(a)} to have ${b.length} elements in it`
-	);
-
-	for (const [index] of a.entries()) {
-		assert(a[index], b[index]);
-	}
-}
+import { assertArrayEquals } from "./assert";
 
 const events1: any[] = [];
 const events2: any[] = [];
@@ -55,4 +34,4 @@ assertArrayEquals(events2, expected2);
 
 export {};
 
-console.log("PubSub test passed");
+console.log("'PubSub' test passed");
