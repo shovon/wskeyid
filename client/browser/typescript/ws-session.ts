@@ -1,4 +1,4 @@
-import PubSub, { Sub } from "./pub-sub";
+import PubSub, { getNext, Sub } from "./pub-sub";
 
 export default class WsSession {
 	private ws: WebSocket | null = null;
@@ -8,6 +8,7 @@ export default class WsSession {
 	private _messageEvents: PubSub<MessageEvent> = new PubSub();
 	private _connectedEvents: PubSub<void> = new PubSub();
 	private _disconnectionEvents: PubSub<void> = new PubSub();
+	private _currentConnectionId: number = 0;
 
 	constructor(url: string) {
 		this._url = url;
@@ -15,6 +16,7 @@ export default class WsSession {
 	}
 
 	private disconnected() {
+		this._currentConnectionId++;
 		this.connect();
 	}
 
@@ -68,6 +70,17 @@ export default class WsSession {
 		}
 	}
 
+	async getNextMessage(): Promise<MessageEvent> {
+		const initialConnectionId = this._currentConnectionId;
+		const message = getNext(this._messageEvents);
+		if (initialConnectionId !== this._currentConnectionId) {
+			throw new Error(
+				"A disconnection happened before the next message could have been received"
+			);
+		}
+		return message;
+	}
+
 	get messageEvents(): Sub<MessageEvent> {
 		return this._messageEvents;
 	}
@@ -82,5 +95,9 @@ export default class WsSession {
 
 	get isClosed(): boolean {
 		return this._isClosed;
+	}
+
+	get currentConnectionId(): number {
+		return this._currentConnectionId;
 	}
 }

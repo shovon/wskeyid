@@ -1,6 +1,5 @@
 import { decodeBase64, encodeBase64 } from "./base64";
 import Once, { SubOnce } from "./once";
-import { getNext } from "./pub-sub";
 import { getClientId, signMessage } from "./utils";
 import WsSession from "./ws-session";
 
@@ -58,7 +57,7 @@ export default class AuthenticatedConnection {
 
 		try {
 			{
-				const { data: payload } = await getNext(this.session.messageEvents);
+				const { data: payload } = await this.session.getNextMessage();
 
 				const { type, data } = JSON.parse(payload);
 
@@ -84,7 +83,7 @@ export default class AuthenticatedConnection {
 			}
 
 			{
-				const { data: response } = await getNext(this.session.messageEvents);
+				const { data: response } = await this.session.getNextMessage();
 
 				const { type } = JSON.parse(response);
 
