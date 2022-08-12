@@ -27,8 +27,8 @@ const expected2: number[] = [42];
 setTimeout(() => {
 	assertArrayEquals(events1, expected1);
 	assertArrayEquals(events2, expected2);
-}, 100);
 
-console.log("'Once' test passed");
+	console.log("'Once' test passed");
+}, 100);
 
 export {};
