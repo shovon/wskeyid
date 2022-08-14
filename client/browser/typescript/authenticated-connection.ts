@@ -3,7 +3,7 @@ import Once, { SubOnce } from "./once";
 import { getClientId, signMessage } from "./utils";
 import WsSession from "./ws-session";
 
-class Failed implements SubOnce<void> {
+class HasFailed implements SubOnce<void> {
 	private _hasFailed: boolean = false;
 	private once: Once<void> = new Once<void>();
 
@@ -32,7 +32,7 @@ class Failed implements SubOnce<void> {
  * established.
  */
 export default class AuthenticatedConnection {
-	private failed: Failed = new Failed();
+	private failed: HasFailed = new HasFailed();
 	private session: WsSession | null = null;
 	private _url: URL;
 
