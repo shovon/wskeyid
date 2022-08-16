@@ -60,7 +60,10 @@ type Socket = {
 	sendMessage(value: string): void;
 };
 
-export async function handleConnection(socket: Socket, path: string): boolean {
+export async function handleConnection(
+	socket: Socket,
+	path: string
+): Promise<boolean> {
 	const sendMessage = (message: ClientMessage) => {
 		socket.sendMessage(JSON.stringify(message));
 	};
