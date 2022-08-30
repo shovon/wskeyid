@@ -5,6 +5,7 @@ export class ReadingFromClosedStreamError extends Error {
 		super("An attempt was made to read from a closed port");
 	}
 }
+
 /**
  * An async iterable class that allows you to stream events in, and convert
  * those events into an async iterable, with an optional event handler for

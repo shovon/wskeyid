@@ -10,4 +10,9 @@ http.createServer((req, res) => {
 	}
 
 	const url = new URL(`somehwere://somewhere${req.url}`);
+
+	const clientId = url.searchParams.get("client_id");
+
+	if (!clientId) {
+	}
 });
